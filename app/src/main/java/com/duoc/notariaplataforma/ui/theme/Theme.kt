@@ -8,6 +8,7 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
 private val DarkColorScheme = darkColorScheme(
@@ -21,24 +22,24 @@ private val LightColorScheme = lightColorScheme(
     secondary = DoradoNotaria,
     tertiary = VerdeExito,
     background = GrisClaro,
-    surface = androidx.compose.ui.graphics.Color.White,
-    onPrimary = androidx.compose.ui.graphics.Color.White,
-    onSecondary = androidx.compose.ui.graphics.Color.Black,
-    onTertiary = androidx.compose.ui.graphics.Color.White
+    surface = Color.White,
+    onPrimary = Color.White,
+    onSecondary = Color.Black,
+    onTertiary = Color.White
 )
 
 @Composable
 fun NotariaplataformaTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = false, // CAMBIAR DE true A false
+    dynamicColor: Boolean = false, // Desactivado para usar paleta corporativa
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
         dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+            dynamicDarkColorScheme(LocalContext.current).let {
+                if (darkTheme) it else dynamicLightColorScheme(LocalContext.current)
+            }
         }
-
         darkTheme -> DarkColorScheme
         else -> LightColorScheme
     }

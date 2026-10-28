@@ -14,5 +14,6 @@ fun NavegacionApp() {
         composable("login") { LoginScreen(navController) }
         composable("registro") { RegistroScreen(navController) }
         composable("home") { HomeScreen(navController) }
+        composable("solicitud") { SolicitudTramiteScreen(navController) }
     }
 }
