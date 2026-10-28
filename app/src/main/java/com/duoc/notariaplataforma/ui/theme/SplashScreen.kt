@@ -20,19 +20,23 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import com.duoc.notariaplataforma.R
 import kotlinx.coroutines.delay
 
 @Composable
-fun SplashScreen() {
+fun SplashScreen(navController: NavController) {
     val alpha = remember { Animatable(0f) }
 
     LaunchedEffect(Unit) {
         alpha.animateTo(
             targetValue = 1f,
-            animationSpec = tween(durationMillis = 2000)
+            animationSpec = tween(durationMillis = 1500)
         )
-        delay(2500)
+        delay(2000)
+        navController.navigate("login") {
+            popUpTo("splash") { inclusive = true }
+        }
     }
 
     Column(
@@ -46,7 +50,7 @@ fun SplashScreen() {
             painter = painterResource(id = R.drawable.logo_notaria),
             contentDescription = "Logo NotariaX",
             modifier = Modifier
-                .size(200.dp)
+                .size(300.dp)
                 .alpha(alpha.value)
         )
         Text(

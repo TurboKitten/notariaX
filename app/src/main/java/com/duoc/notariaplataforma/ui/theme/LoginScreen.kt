@@ -29,10 +29,11 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import com.duoc.notariaplataforma.R
 
 @Composable
-fun LoginScreen() {
+fun LoginScreen(navController: NavController) {
     var correo by remember { mutableStateOf("") }
     var contrasena by remember { mutableStateOf("") }
 
@@ -46,16 +47,16 @@ fun LoginScreen() {
         Image(
             painter = painterResource(id = R.drawable.logo_notaria),
             contentDescription = "Logo NotariaX",
-            modifier = Modifier.size(120.dp)
+            modifier = Modifier.size(160.dp)
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text = "NotariaX",
+            text = "NotariaXPlorer",
             fontSize = 28.sp,
             fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.primary
+            color = MaterialTheme.colorScheme.secondary
         )
 
         Text(
@@ -86,7 +87,7 @@ fun LoginScreen() {
         Spacer(modifier = Modifier.height(32.dp))
 
         Button(
-            onClick = { /* Sin navegación aún */ },
+            onClick = { navController.navigate("home") },
             modifier = Modifier.fillMaxWidth(),
             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
         ) {
@@ -95,7 +96,7 @@ fun LoginScreen() {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        TextButton(onClick = { /* Sin navegación aún */ }) {
+        TextButton(onClick = { navController.navigate("registro") }) {
             Text("¿No tienes cuenta? Regístrate aquí")
         }
     }

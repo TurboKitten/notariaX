@@ -31,10 +31,11 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import com.duoc.notariaplataforma.R
 
 @Composable
-fun RegistroScreen() {
+fun RegistroScreen(navController: NavController) {
     var nombre by remember { mutableStateOf("") }
     var apellido by remember { mutableStateOf("") }
     var rut by remember { mutableStateOf("") }
@@ -60,10 +61,10 @@ fun RegistroScreen() {
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            text = "NotariaX",
+            text = "NotariaXPlorer",
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.primary
+            color = MaterialTheme.colorScheme.secondary
         )
 
         Text(
@@ -89,7 +90,7 @@ fun RegistroScreen() {
         Spacer(modifier = Modifier.height(24.dp))
 
         Button(
-            onClick = { /* Sin navegación aún */ },
+            onClick = { navController.navigate("login") },
             modifier = Modifier.fillMaxWidth(),
             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
         ) {
@@ -98,7 +99,7 @@ fun RegistroScreen() {
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        TextButton(onClick = { /* Sin navegación aún */ }) {
+        TextButton(onClick = { navController.navigate("login") }) {
             Text("¿Ya tienes cuenta? Inicia sesión")
         }
     }
