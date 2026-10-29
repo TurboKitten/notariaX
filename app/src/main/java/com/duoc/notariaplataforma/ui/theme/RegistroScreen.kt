@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
@@ -33,9 +34,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.duoc.notariaplataforma.R
+import com.duoc.notariaplataforma.model.Usuario
+import com.duoc.notariaplataforma.viewmodel.UsuarioViewModel
 
 @Composable
-fun RegistroScreen(navController: NavController) {
+fun RegistroScreen(navController: NavController, viewModel: UsuarioViewModel) {
     var nombre by remember { mutableStateOf("") }
     var apellido by remember { mutableStateOf("") }
     var rut by remember { mutableStateOf("") }
@@ -43,6 +46,8 @@ fun RegistroScreen(navController: NavController) {
     var telefono by remember { mutableStateOf("") }
     var contrasena by remember { mutableStateOf("") }
     var confirmarContrasena by remember { mutableStateOf("") }
+    var mostrarModal by remember { mutableStateOf(false) }
+    var mensajeModal by remember { mutableStateOf("") }
 
     Column(
         modifier = Modifier
@@ -90,7 +95,31 @@ fun RegistroScreen(navController: NavController) {
         Spacer(modifier = Modifier.height(24.dp))
 
         Button(
-            onClick = { navController.navigate("login") },
+            onClick = {
+                when {
+                    nombre.isEmpty() || apellido.isEmpty() || rut.isEmpty() || correo.isEmpty() || telefono.isEmpty() || contrasena.isEmpty() || confirmarContrasena.isEmpty() -> {
+                        mensajeModal = "Todos los campos son obligatorios"
+                        mostrarModal = true
+                    }
+                    contrasena != confirmarContrasena -> {
+                        mensajeModal = "Las contraseñas no coinciden"
+                        mostrarModal = true
+                    }
+                    else -> {
+                        val usuario = Usuario(
+                            nombre = nombre,
+                            apellido = apellido,
+                            rut = rut,
+                            correo = correo,
+                            telefono = telefono,
+                            contrasena = contrasena
+                        )
+                        viewModel.registrarUsuario(usuario)
+                        mensajeModal = "¡Usuario registrado exitosamente!"
+                        mostrarModal = true
+                    }
+                }
+            },
             modifier = Modifier.fillMaxWidth(),
             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
         ) {
@@ -102,5 +131,28 @@ fun RegistroScreen(navController: NavController) {
         TextButton(onClick = { navController.navigate("login") }) {
             Text("¿Ya tienes cuenta? Inicia sesión")
         }
+    }
+
+    if (mostrarModal) {
+        AlertDialog(
+            onDismissRequest = {
+                mostrarModal = false
+                if (mensajeModal.contains("exitosamente")) {
+                    navController.navigate("login")
+                }
+            },
+            title = { Text("NotariaX") },
+            text = { Text(mensajeModal) },
+            confirmButton = {
+                Button(onClick = {
+                    mostrarModal = false
+                    if (mensajeModal.contains("exitosamente")) {
+                        navController.navigate("login")
+                    }
+                }) {
+                    Text("Aceptar")
+                }
+            }
+        )
     }
 }

@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
@@ -17,6 +18,8 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -31,11 +34,30 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.duoc.notariaplataforma.R
-
+import com.duoc.notariaplataforma.viewmodel.UsuarioViewModel
 @Composable
-fun LoginScreen(navController: NavController) {
+fun LoginScreen(navController: NavController, viewModel: UsuarioViewModel) {
     var correo by remember { mutableStateOf("") }
     var contrasena by remember { mutableStateOf("") }
+    var mostrarModalError by remember { mutableStateOf(false) }
+
+    val loginExitoso by viewModel.loginExitoso.collectAsState()
+    val mensajeError by viewModel.mensajeError.collectAsState()
+
+    LaunchedEffect(loginExitoso) {
+        if (loginExitoso) {
+            navController.navigate("home") {
+                popUpTo("login") { inclusive = true }
+            }
+        }
+    }
+
+    LaunchedEffect(mensajeError) {
+        if (mensajeError.isNotEmpty()) {
+            mostrarModalError = true
+        }
+    }
+
 
     Column(
         modifier = Modifier
@@ -87,7 +109,11 @@ fun LoginScreen(navController: NavController) {
         Spacer(modifier = Modifier.height(32.dp))
 
         Button(
-            onClick = { navController.navigate("home") },
+            onClick = {
+                if (correo.isNotEmpty() && contrasena.isNotEmpty()) {
+                    viewModel.iniciarSesion(correo, contrasena)
+                }
+            },
             modifier = Modifier.fillMaxWidth(),
             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
         ) {
@@ -99,5 +125,24 @@ fun LoginScreen(navController: NavController) {
         TextButton(onClick = { navController.navigate("registro") }) {
             Text("¿No tienes cuenta? Regístrate aquí")
         }
+    }
+
+    if (mostrarModalError) {
+        AlertDialog(
+            onDismissRequest = {
+                mostrarModalError = false
+                viewModel.limpiarMensaje()
+            },
+            title = { Text("Error de autenticación") },
+            text = { Text(mensajeError) },
+            confirmButton = {
+                Button(onClick = {
+                    mostrarModalError = false
+                    viewModel.limpiarMensaje()
+                }) {
+                    Text("Aceptar")
+                }
+            }
+        )
     }
 }

@@ -18,6 +18,8 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -26,9 +28,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.duoc.notariaplataforma.R
-
+import com.duoc.notariaplataforma.viewmodel.UsuarioViewModel
 @Composable
-fun HomeScreen(navController: NavController) {
+fun HomeScreen(navController: NavController, viewModel: UsuarioViewModel) {
+    val usuarioLogueado by viewModel.usuarioLogueado.collectAsState()
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -52,6 +56,14 @@ fun HomeScreen(navController: NavController) {
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.secondary
         )
+
+        usuarioLogueado?.let {
+            Text(
+                text = "${it.nombre} ${it.apellido}",
+                fontSize = 18.sp,
+                modifier = Modifier.padding(top = 4.dp)
+            )
+        }
 
         Spacer(modifier = Modifier.height(32.dp))
 
@@ -85,6 +97,7 @@ fun HomeScreen(navController: NavController) {
 
         Button(
             onClick = {
+                viewModel.cerrarSesion()
                 navController.navigate("login") {
                     popUpTo("home") { inclusive = true }
                 }
