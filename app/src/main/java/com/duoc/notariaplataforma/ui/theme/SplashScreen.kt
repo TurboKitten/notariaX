@@ -16,17 +16,21 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.duoc.notariaplataforma.R
+import com.duoc.notariaplataforma.util.SesionManager
 import kotlinx.coroutines.delay
 
 @Composable
 fun SplashScreen(navController: NavController) {
     val alpha = remember { Animatable(0f) }
+    val context = LocalContext.current
+    val sesionManager = remember { SesionManager(context) }
 
     LaunchedEffect(Unit) {
         alpha.animateTo(
@@ -34,8 +38,14 @@ fun SplashScreen(navController: NavController) {
             animationSpec = tween(durationMillis = 1500)
         )
         delay(2000)
-        navController.navigate("login") {
-            popUpTo("splash") { inclusive = true }
+        if (sesionManager.haySesionActiva()) {
+            navController.navigate("home") {
+                popUpTo("splash") { inclusive = true }
+            }
+        } else {
+            navController.navigate("login") {
+                popUpTo("splash") { inclusive = true }
+            }
         }
     }
 

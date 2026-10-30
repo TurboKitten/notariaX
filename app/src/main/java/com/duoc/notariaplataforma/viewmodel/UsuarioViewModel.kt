@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.room.Room
 import com.duoc.notariaplataforma.model.NotariaDatabase
+import com.duoc.notariaplataforma.model.Solicitud
 import com.duoc.notariaplataforma.model.Usuario
 import com.duoc.notariaplataforma.repository.UsuarioRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,9 +19,11 @@ class UsuarioViewModel(application: Application) : AndroidViewModel(application)
         application.applicationContext,
         NotariaDatabase::class.java,
         "notaria_db"
-    ).build()
+    )
+        .fallbackToDestructiveMigration()
+        .build()
 
-    private val repository = UsuarioRepository(database.usuarioDao())
+    private val repository = UsuarioRepository(database.usuarioDao(), database.solicitudDao())
 
     private val _usuarioLogueado = MutableStateFlow<Usuario?>(null)
     val usuarioLogueado: StateFlow<Usuario?> = _usuarioLogueado.asStateFlow()
@@ -30,6 +33,8 @@ class UsuarioViewModel(application: Application) : AndroidViewModel(application)
 
     private val _mensajeError = MutableStateFlow("")
     val mensajeError: StateFlow<String> = _mensajeError.asStateFlow()
+
+    val solicitudes = repository.todasLasSolicitudes
 
     fun registrarUsuario(usuario: Usuario) {
         viewModelScope.launch {
@@ -45,9 +50,15 @@ class UsuarioViewModel(application: Application) : AndroidViewModel(application)
                 _loginExitoso.value = true
                 _mensajeError.value = ""
             } else {
-                _mensajeError.value = "Correo o contraseña incorrectos"
+                _mensajeError.value = "Correo o contraseÃ±a incorrectos"
                 _loginExitoso.value = false
             }
+        }
+    }
+
+    fun guardarSolicitud(solicitud: Solicitud) {
+        viewModelScope.launch {
+            repository.guardarSolicitud(solicitud)
         }
     }
 

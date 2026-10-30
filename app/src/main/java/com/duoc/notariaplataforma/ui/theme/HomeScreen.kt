@@ -6,10 +6,6 @@ import android.net.Uri
 import android.provider.MediaStore
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -46,14 +42,18 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
 import androidx.navigation.NavController
 import com.duoc.notariaplataforma.R
+import com.duoc.notariaplataforma.util.SesionManager
 import com.duoc.notariaplataforma.viewmodel.UsuarioViewModel
 import com.google.android.gms.location.LocationServices
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import java.io.File
 @Composable
 fun HomeScreen(navController: NavController, viewModel: UsuarioViewModel) {
     val usuarioLogueado by viewModel.usuarioLogueado.collectAsState()
     val context = LocalContext.current
+    val sesionManager = remember { SesionManager(context) }
     var bitmap by remember { mutableStateOf<Bitmap?>(null) }
     var imageUri by remember { mutableStateOf<Uri?>(null) }
     var ubicacion by remember { mutableStateOf("Ubicación no obtenida") }
@@ -191,6 +191,18 @@ fun HomeScreen(navController: NavController, viewModel: UsuarioViewModel) {
                         modifier = Modifier.size(200.dp)
                     )
                 }
+            }
+            if (mostrarModalBienvenida) {
+                AlertDialog(
+                    onDismissRequest = { mostrarModalBienvenida = false },
+                    title = { Text("¡Bienvenido!") },
+                    text = { Text("Has iniciado sesión correctamente en NotariaX.") },
+                    confirmButton = {
+                        Button(onClick = { mostrarModalBienvenida = false }) {
+                            Text("Aceptar")
+                        }
+                    }
+                )
             }
         }
     }

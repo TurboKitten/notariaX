@@ -1,6 +1,5 @@
 package com.duoc.notariaplataforma.ui
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -34,10 +33,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.duoc.notariaplataforma.model.Solicitud
+import com.duoc.notariaplataforma.viewmodel.UsuarioViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SolicitudTramiteScreen(navController: NavController) {
+fun SolicitudTramiteScreen(navController: NavController, viewModel: UsuarioViewModel) {
     var nombreSolicitante by remember { mutableStateOf("") }
     var tipoTramite by remember { mutableStateOf("") }
     var expanded by remember { mutableStateOf(false) }
@@ -84,9 +85,7 @@ fun SolicitudTramiteScreen(navController: NavController) {
                 readOnly = true,
                 label = { Text("Tipo de Trámite") },
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                modifier = Modifier
-                    .menuAnchor()
-                    .fillMaxWidth()
+                modifier = Modifier.menuAnchor().fillMaxWidth()
             )
             ExposedDropdownMenu(
                 expanded = expanded,
@@ -109,31 +108,20 @@ fun SolicitudTramiteScreen(navController: NavController) {
         Text(
             text = "Prioridad del Trámite",
             style = MaterialTheme.typography.bodyLarge,
-            modifier = Modifier
-                .align(Alignment.Start)
-                .padding(bottom = 8.dp)
+            modifier = Modifier.align(Alignment.Start).padding(bottom = 8.dp)
         )
 
         Column(modifier = Modifier.align(Alignment.Start)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                RadioButton(
-                    selected = urgencia == "Normal",
-                    onClick = { urgencia = "Normal" }
-                )
+                RadioButton(selected = urgencia == "Normal", onClick = { urgencia = "Normal" })
                 Text("Normal")
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
-                RadioButton(
-                    selected = urgencia == "Urgente",
-                    onClick = { urgencia = "Urgente" }
-                )
+                RadioButton(selected = urgencia == "Urgente", onClick = { urgencia = "Urgente" })
                 Text("Urgente")
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
-                RadioButton(
-                    selected = urgencia == "Muy Urgente",
-                    onClick = { urgencia = "Muy Urgente" }
-                )
+                RadioButton(selected = urgencia == "Muy Urgente", onClick = { urgencia = "Muy Urgente" })
                 Text("Muy Urgente")
             }
         }
@@ -156,14 +144,8 @@ fun SolicitudTramiteScreen(navController: NavController) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.align(Alignment.Start)
-        ) {
-            Checkbox(
-                checked = aceptaTerminos,
-                onCheckedChange = { aceptaTerminos = it }
-            )
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.align(Alignment.Start)) {
+            Checkbox(checked = aceptaTerminos, onCheckedChange = { aceptaTerminos = it })
             Text("Acepto los términos y condiciones")
         }
 
@@ -172,6 +154,14 @@ fun SolicitudTramiteScreen(navController: NavController) {
         Button(
             onClick = {
                 if (nombreSolicitante.isNotEmpty() && tipoTramite.isNotEmpty() && aceptaTerminos) {
+                    val solicitud = Solicitud(
+                        nombreSolicitante = nombreSolicitante,
+                        tipoTramite = tipoTramite,
+                        prioridad = urgencia,
+                        cantidadCopias = cantidadCopias.toInt(),
+                        estado = "En Proceso"
+                    )
+                    viewModel.guardarSolicitud(solicitud)
                     mostrarModal = true
                 }
             },
@@ -197,23 +187,21 @@ fun SolicitudTramiteScreen(navController: NavController) {
         AlertDialog(
             onDismissRequest = { mostrarModal = false },
             title = { Text("Solicitud Enviada") },
-            text = {
-                Text(
-                    "Solicitud registrada correctamente:\n\n" +
-                            "Solicitante: $nombreSolicitante\n" +
-                            "Trámite: $tipoTramite\n" +
-                            "Prioridad: $urgencia\n" +
-                            "Copias: ${cantidadCopias.toInt()}"
-                )
-            },
+            text = { Text("Tu solicitud ha sido registrada correctamente.\n\nEstado: En Proceso") },
             confirmButton = {
                 Button(onClick = {
                     mostrarModal = false
-                    navController.navigate("home") {
-                        popUpTo("home") { inclusive = false }
-                    }
+                    navController.navigate("misSolicitudes")
                 }) {
-                    Text("Aceptar")
+                    Text("Ver mis solicitudes")
+                }
+            },
+            dismissButton = {
+                Button(onClick = {
+                    mostrarModal = false
+                    navController.navigate("home")
+                }) {
+                    Text("Volver al inicio")
                 }
             }
         )

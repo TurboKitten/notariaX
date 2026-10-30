@@ -26,6 +26,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -34,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.duoc.notariaplataforma.R
+import com.duoc.notariaplataforma.util.SesionManager
 import com.duoc.notariaplataforma.viewmodel.UsuarioViewModel
 @Composable
 fun LoginScreen(navController: NavController, viewModel: UsuarioViewModel) {
@@ -41,11 +43,15 @@ fun LoginScreen(navController: NavController, viewModel: UsuarioViewModel) {
     var contrasena by remember { mutableStateOf("") }
     var mostrarModalError by remember { mutableStateOf(false) }
 
+    val context = LocalContext.current
+    val sesionManager = remember { SesionManager(context) }
+
     val loginExitoso by viewModel.loginExitoso.collectAsState()
     val mensajeError by viewModel.mensajeError.collectAsState()
 
     LaunchedEffect(loginExitoso) {
         if (loginExitoso) {
+            sesionManager.guardarSesion(correo)
             navController.navigate("home") {
                 popUpTo("login") { inclusive = true }
             }
