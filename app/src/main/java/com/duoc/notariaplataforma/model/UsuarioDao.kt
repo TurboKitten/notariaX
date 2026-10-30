@@ -14,6 +14,9 @@ interface UsuarioDao {
     @Query("SELECT * FROM usuarios WHERE correo = :correo AND contrasena = :contrasena LIMIT 1")
     suspend fun iniciarSesion(correo: String, contrasena: String): Usuario?
 
+    @Query("SELECT * FROM usuarios WHERE correo = :correo LIMIT 1")
+    suspend fun obtenerUsuarioPorCorreo(correo: String): Usuario?
+
     @Query("SELECT * FROM usuarios")
     fun obtenerTodosLosUsuarios(): Flow<List<Usuario>>
 }

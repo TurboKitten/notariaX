@@ -22,6 +22,10 @@ class UsuarioRepository(
         return usuarioDao.iniciarSesion(correo, contrasena)
     }
 
+    suspend fun obtenerUsuarioPorCorreo(correo: String): Usuario? {
+        return usuarioDao.obtenerUsuarioPorCorreo(correo)
+    }
+
     suspend fun guardarSolicitud(solicitud: Solicitud) {
         solicitudDao.insertarSolicitud(solicitud)
     }

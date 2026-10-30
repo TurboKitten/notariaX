@@ -52,7 +52,7 @@ fun LoginScreen(navController: NavController, viewModel: UsuarioViewModel) {
     LaunchedEffect(loginExitoso) {
         if (loginExitoso) {
             sesionManager.guardarSesion(correo)
-            navController.navigate("home") {
+            navController.navigate("home?mostrarBienvenida=true") {
                 popUpTo("login") { inclusive = true }
             }
         }

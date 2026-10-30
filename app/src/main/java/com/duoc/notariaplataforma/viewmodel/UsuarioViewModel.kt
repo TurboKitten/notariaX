@@ -36,6 +36,21 @@ class UsuarioViewModel(application: Application) : AndroidViewModel(application)
 
     val solicitudes = repository.todasLasSolicitudes
 
+    init {
+        val sesionManager = com.duoc.notariaplataforma.util.SesionManager(application)
+        if (sesionManager.haySesionActiva()) {
+            val correo = sesionManager.obtenerCorreo()
+            if (correo.isNotEmpty()) {
+                viewModelScope.launch {
+                    val usuario = repository.obtenerUsuarioPorCorreo(correo)
+                    if (usuario != null) {
+                        _usuarioLogueado.value = usuario
+                    }
+                }
+            }
+        }
+    }
+
     fun registrarUsuario(usuario: Usuario) {
         viewModelScope.launch {
             repository.registrarUsuario(usuario)

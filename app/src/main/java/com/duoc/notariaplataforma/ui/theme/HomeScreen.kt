@@ -50,7 +50,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import java.io.File
 @Composable
-fun HomeScreen(navController: NavController, viewModel: UsuarioViewModel) {
+fun HomeScreen(navController: NavController, viewModel: UsuarioViewModel, mostrarBienvenidaInicial: Boolean = false) {
     val usuarioLogueado by viewModel.usuarioLogueado.collectAsState()
     val context = LocalContext.current
     val sesionManager = remember { SesionManager(context) }
@@ -58,7 +58,7 @@ fun HomeScreen(navController: NavController, viewModel: UsuarioViewModel) {
     var imageUri by remember { mutableStateOf<Uri?>(null) }
     var ubicacion by remember { mutableStateOf("Ubicación no obtenida") }
     var mostrarModalUbicacion by remember { mutableStateOf(false) }
-    var mostrarModalBienvenida by remember { mutableStateOf(true) }
+    var mostrarModalBienvenida by remember { mutableStateOf(mostrarBienvenidaInicial) }
     var visible by remember { mutableStateOf(false) }
 
     androidx.compose.runtime.LaunchedEffect(Unit) {
@@ -165,7 +165,18 @@ fun HomeScreen(navController: NavController, viewModel: UsuarioViewModel) {
                 Spacer(modifier = Modifier.height(12.dp))
 
                 Button(
+                    onClick = { navController.navigate("misSolicitudes") },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
+                ) {
+                    Text("Ver Mis Solicitudes")
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Button(
                     onClick = {
+                        sesionManager.cerrarSesion()
                         viewModel.cerrarSesion()
                         navController.navigate("login") {
                             popUpTo("home") { inclusive = true }

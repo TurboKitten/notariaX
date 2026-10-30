@@ -39,7 +39,7 @@ fun SplashScreen(navController: NavController) {
         )
         delay(2000)
         if (sesionManager.haySesionActiva()) {
-            navController.navigate("home") {
+            navController.navigate("home?mostrarBienvenida=false") {
                 popUpTo("splash") { inclusive = true }
             }
         } else {
