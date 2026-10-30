@@ -1,4 +1,4 @@
-# NotariaX - Plataforma Notarial Digital
+# NotariaXPlorer - Plataforma Notarial Digital
 
 Aplicación móvil desarrollada en **Kotlin** con **Jetpack Compose** siguiendo la arquitectura **MVVM (Model-View-ViewModel)** para la simulación de una plataforma digital de trámites notariales.
 
@@ -38,14 +38,17 @@ com.duoc.notariaplataforma/
 ├── util/           # Utilidades (Gestor de sesión)
 │   └── SesionManager.kt
 ├── ui/             # Pantallas y componentes Compose
-│   ├── theme/      # Tema, colores y tipografía
 │   ├── SplashScreen.kt
 │   ├── LoginScreen.kt
 │   ├── RegistroScreen.kt
 │   ├── HomeScreen.kt
 │   ├── SolicitudTramiteScreen.kt
 │   ├── MisSolicitudesScreen.kt
-│   └── NavegacionApp.kt
+│   ├── NavegacionApp.kt
+│   └──theme/      # Tema, colores y tipografía
+│   │   ├── Color.kt
+│   │   ├── Theme.kt
+│   │   └── Type.kt
 └── MainActivity.kt
 ```
 
