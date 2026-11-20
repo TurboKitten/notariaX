@@ -43,14 +43,21 @@ import androidx.core.content.FileProvider
 import androidx.navigation.NavController
 import com.duoc.notariaplataforma.R
 import com.duoc.notariaplataforma.util.SesionManager
+import com.duoc.notariaplataforma.viewmodel.SolicitudViewModel
 import com.duoc.notariaplataforma.viewmodel.UsuarioViewModel
 import com.google.android.gms.location.LocationServices
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import java.io.File
+
 @Composable
-fun HomeScreen(navController: NavController, viewModel: UsuarioViewModel, mostrarBienvenidaInicial: Boolean = false) {
+fun HomeScreen(
+    navController: NavController,
+    viewModel: UsuarioViewModel,
+    solicitudViewModel: SolicitudViewModel,
+    mostrarBienvenidaInicial: Boolean = false
+) {
     val usuarioLogueado by viewModel.usuarioLogueado.collectAsState()
     val context = LocalContext.current
     val sesionManager = remember { SesionManager(context) }
@@ -178,6 +185,7 @@ fun HomeScreen(navController: NavController, viewModel: UsuarioViewModel, mostra
                     onClick = {
                         sesionManager.cerrarSesion()
                         viewModel.cerrarSesion()
+                        solicitudViewModel.limpiarSolicitudes()
                         navController.navigate("login") {
                             popUpTo("home") { inclusive = true }
                         }

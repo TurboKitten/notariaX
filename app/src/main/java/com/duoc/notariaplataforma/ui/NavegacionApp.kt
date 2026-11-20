@@ -7,12 +7,14 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.duoc.notariaplataforma.viewmodel.SolicitudViewModel
 import com.duoc.notariaplataforma.viewmodel.UsuarioViewModel
 
 @Composable
 fun NavegacionApp() {
     val navController = rememberNavController()
     val usuarioViewModel: UsuarioViewModel = viewModel()
+    val solicitudViewModel: SolicitudViewModel = viewModel()
 
     NavHost(navController = navController, startDestination = "splash") {
         composable("splash") { SplashScreen(navController) }
@@ -23,9 +25,9 @@ fun NavegacionApp() {
             arguments = listOf(navArgument("mostrarBienvenida") { type = NavType.BoolType; defaultValue = false })
         ) { backStackEntry ->
             val mostrarBienvenida = backStackEntry.arguments?.getBoolean("mostrarBienvenida") ?: false
-            HomeScreen(navController, usuarioViewModel, mostrarBienvenidaInicial = mostrarBienvenida)
+            HomeScreen(navController, usuarioViewModel, solicitudViewModel, mostrarBienvenidaInicial = mostrarBienvenida)
         }
-        composable("solicitud") { SolicitudTramiteScreen(navController, usuarioViewModel) }
-        composable("misSolicitudes") { MisSolicitudesScreen(navController, usuarioViewModel) }
+        composable("solicitud") { SolicitudTramiteScreen(navController, solicitudViewModel) }
+        composable("misSolicitudes") { MisSolicitudesScreen(navController, solicitudViewModel) }
     }
 }

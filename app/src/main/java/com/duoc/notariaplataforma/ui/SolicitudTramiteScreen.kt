@@ -13,6 +13,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -23,6 +24,8 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -34,20 +37,37 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.duoc.notariaplataforma.model.Solicitud
-import com.duoc.notariaplataforma.viewmodel.UsuarioViewModel
+import com.duoc.notariaplataforma.viewmodel.SolicitudViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SolicitudTramiteScreen(navController: NavController, viewModel: UsuarioViewModel) {
+fun SolicitudTramiteScreen(navController: NavController, viewModel: SolicitudViewModel) {
     var nombreSolicitante by remember { mutableStateOf("") }
     var tipoTramite by remember { mutableStateOf("") }
     var expanded by remember { mutableStateOf(false) }
     var urgencia by remember { mutableStateOf("Normal") }
     var aceptaTerminos by remember { mutableStateOf(false) }
     var cantidadCopias by remember { mutableFloatStateOf(1f) }
-    var mostrarModal by remember { mutableStateOf(false) }
+    var mostrarDialogo by remember { mutableStateOf(false) }
+    var enviando by remember { mutableStateOf(false) }
 
-    val tiposTramite = listOf("Escritura Pública", "Poder Notarial", "Certificación", "Autenticación", "Protesto")
+    val tiposTramiteRemotos by viewModel.tiposTramite.collectAsState()
+    val operacionExitosa by viewModel.operacionSolicitudExitosa.collectAsState()
+    val mensajeOperacion by viewModel.mensajeOperacionSolicitud.collectAsState()
+
+    val tiposPorDefecto = listOf("Escritura Pública", "Poder Notarial", "Certificación", "Autenticación", "Protesto")
+    val tiposTramite = if (tiposTramiteRemotos.isNotEmpty()) tiposTramiteRemotos.map { it.nombre } else tiposPorDefecto
+
+    LaunchedEffect(Unit) {
+        viewModel.cargarTiposTramite()
+    }
+
+    LaunchedEffect(mensajeOperacion) {
+        if (mensajeOperacion.isNotBlank()) {
+            enviando = false
+            mostrarDialogo = true
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -154,22 +174,27 @@ fun SolicitudTramiteScreen(navController: NavController, viewModel: UsuarioViewM
         Button(
             onClick = {
                 if (nombreSolicitante.isNotEmpty() && tipoTramite.isNotEmpty() && aceptaTerminos) {
+                    enviando = true
                     val solicitud = Solicitud(
                         nombreSolicitante = nombreSolicitante,
                         tipoTramite = tipoTramite,
                         prioridad = urgencia,
                         cantidadCopias = cantidadCopias.toInt(),
-                        estado = "En Proceso"
+                        estado = "En Proceso",
+                        fechaRegistro = System.currentTimeMillis().toString()
                     )
                     viewModel.guardarSolicitud(solicitud)
-                    mostrarModal = true
                 }
             },
             modifier = Modifier.fillMaxWidth(),
-            enabled = nombreSolicitante.isNotEmpty() && tipoTramite.isNotEmpty() && aceptaTerminos,
+            enabled = !enviando && nombreSolicitante.isNotEmpty() && tipoTramite.isNotEmpty() && aceptaTerminos,
             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
         ) {
-            Text("Enviar Solicitud")
+            if (enviando) {
+                CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary, strokeWidth = 2.dp)
+            } else {
+                Text("Enviar Solicitud")
+            }
         }
 
         Spacer(modifier = Modifier.height(12.dp))
@@ -183,25 +208,34 @@ fun SolicitudTramiteScreen(navController: NavController, viewModel: UsuarioViewM
         }
     }
 
-    if (mostrarModal) {
+    if (mostrarDialogo) {
         AlertDialog(
-            onDismissRequest = { mostrarModal = false },
-            title = { Text("Solicitud Enviada") },
-            text = { Text("Tu solicitud ha sido registrada correctamente.\n\nEstado: En Proceso") },
+            onDismissRequest = {
+                mostrarDialogo = false
+                viewModel.limpiarEstadoOperacionSolicitud()
+            },
+            title = { Text(if (operacionExitosa) "Solicitud Enviada" else "Error") },
+            text = { Text(mensajeOperacion.ifBlank { if (operacionExitosa) "Tu solicitud ha sido registrada correctamente." else "Ocurrió un error al enviar la solicitud." }) },
             confirmButton = {
                 Button(onClick = {
-                    mostrarModal = false
-                    navController.navigate("misSolicitudes")
+                    mostrarDialogo = false
+                    viewModel.limpiarEstadoOperacionSolicitud()
+                    if (operacionExitosa) {
+                        navController.navigate("misSolicitudes")
+                    }
                 }) {
-                    Text("Ver mis solicitudes")
+                    Text(if (operacionExitosa) "Ver mis solicitudes" else "Aceptar")
                 }
             },
             dismissButton = {
-                Button(onClick = {
-                    mostrarModal = false
-                    navController.navigate("home")
-                }) {
-                    Text("Volver al inicio")
+                if (operacionExitosa) {
+                    Button(onClick = {
+                        mostrarDialogo = false
+                        viewModel.limpiarEstadoOperacionSolicitud()
+                        navController.navigate("home")
+                    }) {
+                        Text("Volver al inicio")
+                    }
                 }
             }
         )
