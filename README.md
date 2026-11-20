@@ -1,43 +1,58 @@
 # NotariaXPlorer - Plataforma Notarial Digital
 
-Aplicación móvil desarrollada en **Kotlin** con **Jetpack Compose** siguiendo la arquitectura **MVVM (Model-View-ViewModel)** para la simulación de una plataforma digital de trámites notariales.
+Aplicación móvil desarrollada en **Kotlin** con **Jetpack Compose** siguiendo la arquitectura **MVVM** para la simulación de una plataforma de trámites notariales. El proyecto integra persistencia local (Room) y consumo de **API remota con Retrofit (Xano)**.
 
 ## Objetivo
 
-Simular un sistema donde un usuario pueda registrarse, iniciar sesión, solicitar trámites notariales, adjuntar evidencia fotográfica, obtener su ubicación y consultar sus solicitudes, aplicando los conceptos aprendidos en desarrollo móvil.
+Permitir a un usuario registrarse, iniciar sesión y gestionar solicitudes de trámites notariales (crear, listar, editar y eliminar) consumiendo una API backend, además de utilizar recursos nativos del dispositivo.
 
-## Características Implementadas
+## Funcionalidades implementadas
 
-- [x] **Arquitectura MVVM** - Separación clara entre Model, View, ViewModel y Repository
-- [x] **Formulario** - Pantalla de solicitud de trámite con múltiples elementos
-- [x] **Validación de campos** - Validación en Login, Registro y Formulario de Solicitud
-- [x] **Imágenes** - Logo de NotariaX y captura de fotos con cámara nativa
-- [x] **Animación** - Animación fade-in y slide-in en SplashScreen
-- [x] **Modal (AlertDialog)** - Diálogos de confirmación, error, bienvenida y ubicación
-- [x] **Persistencia con Room** - Base de datos local para Usuarios y Solicitudes
-- [x] **Navegación entre vistas** - Navigation Compose con rutas definidas
-- [x] **Recurso nativo** - Cámara fotográfica
-- [x] **Persistencia de sesión** - Sesión guardada con SharedPreferences (mantiene sesión al cerrar app)
-- [x] **Mis Solicitudes** - Listado de solicitudes guardadas con estado "En Proceso"
-- [x] **Diseño profesional** - Paleta de colores corporativa adecuada a una notaría
+- **Arquitectura MVVM** con separación de responsabilidades:
+  - `UsuarioViewModel` + `UsuarioRepository`: autenticación/sesión y datos de usuario (Room).
+  - `SolicitudViewModel` + `SolicitudRepository`: gestión de solicitudes y catálogo de tipos de trámite (API remota Xano).
+- **Autenticación local**: registro e inicio de sesión contra base de datos Room, con persistencia de sesión mediante `SharedPreferences`.
+- **CRUD de solicitudes vía API (Xano + Retrofit)** desde la interfaz:
+  - Crear solicitud de trámite.
+  - Listar solicitudes del usuario.
+  - Editar solicitud (estado, prioridad, cantidad de copias).
+  - Eliminar solicitud.
+  - Manejo de estados de carga, éxito y error en UI.
+- **Catálogo de tipos de trámite desde API** (`GET /tipo_tramite`) con fallback local en pantalla de solicitud.
+- **Recursos nativos**:
+  - Cámara: captura de foto (documento fotográfico) desde `HomeScreen`.
+  - GPS/Ubicación: obtención de ubicación actual del dispositivo con permisos en tiempo de ejecución.
+- **Navegación con Navigation Compose**.
+- **UI con Material Design 3 y Jetpack Compose** (formularios, validaciones, diálogos, estados visuales).
+- **Animación** en `SplashScreen`.
+- **Permiso de Internet** para consumo de API.
 
-## Estructura del Proyecto
+## Estructura del proyecto
 
 ```text
 com.duoc.notariaplataforma/
-├── model/          # Entidades, DAOs y Base de Datos Room
+├── model/                  # Entidades, DAOs y base de datos Room
 │   ├── Usuario.kt
 │   ├── UsuarioDao.kt
 │   ├── Solicitud.kt
 │   ├── SolicitudDao.kt
 │   └── NotariaDatabase.kt
-├── repository/     # Repositorio para abstracción de datos
-│   └── UsuarioRepository.kt
-├── viewmodel/      # Lógica de presentación y gestión de estados
-│   └── UsuarioViewModel.kt
-├── util/           # Utilidades (Gestor de sesión)
+├── remote/                 # Integración con API (Retrofit)
+│   ├── api/
+│   │   ├── RetrofitClient.kt          # Cliente Retrofit para Xano
+│   │   └── XanoApiService.kt          # Endpoints Xano (solicitudes/tipos)
+│   └── dto/
+│       ├── SolicitudDto.kt
+│       └── TipoTramiteDto.kt
+├── repository/             # Acceso a datos (local/remoto)
+│   ├── UsuarioRepository.kt
+│   └── SolicitudRepository.kt
+├── viewmodel/              # Lógica de presentación y estado
+│   ├── UsuarioViewModel.kt
+│   └── SolicitudViewModel.kt
+├── util/
 │   └── SesionManager.kt
-├── ui/             # Pantallas y componentes Compose
+├── ui/                     # Pantallas y navegación (Compose)
 │   ├── SplashScreen.kt
 │   ├── LoginScreen.kt
 │   ├── RegistroScreen.kt
@@ -45,50 +60,77 @@ com.duoc.notariaplataforma/
 │   ├── SolicitudTramiteScreen.kt
 │   ├── MisSolicitudesScreen.kt
 │   ├── NavegacionApp.kt
-│   └──theme/      # Tema, colores y tipografía
-│   │   ├── Color.kt
-│   │   ├── Theme.kt
-│   │   └── Type.kt
+│   └── theme/
+│       ├── Color.kt
+│       ├── Theme.kt
+│       └── Type.kt
 └── MainActivity.kt
 ```
 
-## Pantallas
+## Integración API (Xano)
+
+- **Base URL:** `https://x8ki-letl-twmt.n7.xano.io/api:WSxJtlCC/`
+- **Grupo/API:** `Apis legales notariax` (`WSxJtlCC`)
+
+| Método | Endpoint | Descripción | Uso en la app |
+|---|---|---|---|
+| `GET` | `/solicitud` | Lista solicitudes (filtro opcional `usuario_correo`) | Cargar/listar y refrescar "Mis Solicitudes" |
+| `POST` | `/solicitud` | Crea una solicitud | Enviar formulario de "Solicitar Trámite Notarial" |
+| `GET` | `/solicitud/{solicitud_id}` | Obtiene una solicitud por ID | Disponible en capa API/repositorio (uso futuro/detalle) |
+| `PATCH` | `/solicitud/{solicitud_id}` | Actualiza una solicitud | Editar solicitud desde "Mis Solicitudes" |
+| `DELETE` | `/solicitud/{solicitud_id}` | Elimina una solicitud | Eliminar solicitud desde "Mis Solicitudes" |
+| `GET` | `/tipo_tramite` | Lista tipos de trámite | Poblar catálogo en formulario de solicitud |
+| `GET` | `/tipo_tramite/{tipo_tramite_id}` | Obtiene un tipo de trámite por ID | Definido en API (uso futuro) |
+
+**Campos principales de solicitud (JSON):** `id`, `created_at`, `nombre_solicitante`, `tipo_tramite`, `prioridad`, `cantidad_copias`, `estado`, `fecha_registro`, `usuario_correo`.
+
+## Pantallas principales
 
 | Pantalla | Descripción |
 |---|---|
-| **SplashScreen** | Pantalla de bienvenida con animación. Verifica si existe sesión activa para redirigir automáticamente. |
-| **LoginScreen** | Inicio de sesión con validación contra base de datos Room. Guarda sesión con SharedPreferences. |
-| **RegistroScreen** | Registro de nuevo usuario con validación de campos, contraseñas coincidentes y persistencia en Room. |
-| **HomeScreen** | Menú principal con acceso a servicios. Muestra usuario logueado, permite tomar foto, obtener ubicación, solicitar trámite y ver mis solicitudes. |
-| **SolicitudTramiteScreen** | Formulario completo con TextField, Dropdown, RadioButtons, Checkbox, Slider y modal de confirmación. Guarda la solicitud en Room. |
-| **MisSolicitudesScreen** | Lista de solicitudes registradas con su tipo, prioridad, copias, solicitante y estado "En Proceso". |
+| **SplashScreen** | Animación inicial y redirección según sesión activa. |
+| **LoginScreen** | Inicio de sesión local (Room) y guardado de sesión. |
+| **RegistroScreen** | Registro de usuario con validación y persistencia local. |
+| **HomeScreen** | Menú principal: cámara, GPS, solicitud de trámite, mis solicitudes y cierre de sesión. |
+| **SolicitudTramiteScreen** | Formulario para crear solicitud; carga tipos desde API y envía solicitud a Xano. |
+| **MisSolicitudesScreen** | Lista solicitudes remotas del usuario; permite refrescar, editar y eliminar. |
 
-## Tecnologías Utilizadas
+## Tecnologías y dependencias principales
 
-- **Kotlin** - Lenguaje principal
-- **Jetpack Compose** - UI declarativa
-- **Material Design 3** - Componentes visuales modernos
-- **MVVM Architecture** - Patrón arquitectónico
-- **Room Database** - Persistencia local
-- **Navigation Compose** - Navegación entre pantallas
-- **Kotlin Coroutines & Flow** - Programación asincrónica y estados reactivos
-- **ViewModel & LiveData/StateFlow** - Gestión de estados
-- **SharedPreferences** - Persistencia de sesión
-- **CameraX/ActivityResultContracts** - Captura de fotos
-- **Google Play Services Location** - Obtención de ubicación GPS
-- **FileProvider** - Intercambio seguro de archivos con cámara
+- **Kotlin**, **Jetpack Compose**, **Material 3**
+- **MVVM**, **ViewModel**, **StateFlow/Coroutines**
+- **Room** (KSP) para persistencia local
+- **Retrofit + OkHttp + Gson** para consumo de API
+- **Navigation Compose**
+- **Google Play Services Location** (GPS)
+- **Activity Result APIs / FileProvider** (cámara)
 
-## Notas
+## Requisitos y ejecución
 
-- Las solicitudes se guardan localmente con estado **"En Proceso"** de forma estática.
-- La foto capturada se muestra en memoria únicamente (no se guarda en Room).
-- Al iniciar sesión, se guarda el correo en SharedPreferences para mantener la sesión activa.
-- Al cerrar sesión se limpia completamente la sesión.
+1. Abrir el proyecto `NOTARIA PRUEBA` en **Android Studio** (compatible con AGP/Kotlin configurados en el proyecto).
+2. Sincronizar Gradle.
+3. Ejecutar en emulador o dispositivo Android con conexión a internet (requerida para Xano).
+4. Para probar GPS, habilitar servicios de ubicación del dispositivo/emulador y otorgar permisos.
+5. Para probar cámara, otorgar permiso de cámara.
 
-## Autor
+## Notas del estado actual
 
-Proyecto desarrollado para el curso **DSY1105 - Desarrollo de Aplicaciones Móviles** - DUOC UC
+- El **login/registro/sesión** se gestionan localmente (Room + `SharedPreferences`).
+- Las **solicitudes de trámite** se gestionan de forma remota en **Xano** (CRUD desde la app).
+- La foto capturada se muestra en memoria (no se persiste en base de datos).
 
-Por: Matias Duncker y Diego Garrido
+## Pendientes / entregables de evaluación (Parcial 4)
 
+- Pruebas unitarias de lógica (objetivo de cobertura según rúbrica).
+- APK firmado en release (`.jks`, configuración de firma) y evidencias.
+- Ícono personalizado de la aplicación.
+- Evidencias de colaboración/repositorio (Git) y gestión (Trello), según indicaciones del curso.
+- Completar/ajustar documentación final (integrantes, capturas/evidencias y pasos adicionales si aplican).
+
+## Autores
+
+- Matias Duncker
+- Diego Garrido
+
+**Curso:** DSY1105 - Desarrollo de Aplicaciones Móviles (DUOC UC)  
 **Caso:** NotariaX

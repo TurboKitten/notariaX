@@ -1,15 +1,16 @@
 package com.duoc.notariaplataforma.ui
 
 import android.Manifest
+import android.annotation.SuppressLint
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.location.Location
 import android.net.Uri
 import android.provider.MediaStore
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -30,6 +31,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -39,6 +41,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.navigation.NavController
 import com.duoc.notariaplataforma.R
@@ -46,10 +49,11 @@ import com.duoc.notariaplataforma.util.SesionManager
 import com.duoc.notariaplataforma.viewmodel.SolicitudViewModel
 import com.duoc.notariaplataforma.viewmodel.UsuarioViewModel
 import com.google.android.gms.location.LocationServices
-import kotlinx.coroutines.GlobalScope
+import com.google.android.gms.location.Priority
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import java.io.File
+import java.util.Locale
 
 @Composable
 fun HomeScreen(
@@ -61,15 +65,56 @@ fun HomeScreen(
     val usuarioLogueado by viewModel.usuarioLogueado.collectAsState()
     val context = LocalContext.current
     val sesionManager = remember { SesionManager(context) }
+    val scope = rememberCoroutineScope()
+    val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
+
     var bitmap by remember { mutableStateOf<Bitmap?>(null) }
     var imageUri by remember { mutableStateOf<Uri?>(null) }
     var ubicacion by remember { mutableStateOf("Ubicación no obtenida") }
+    var mostrandoUbicacion by remember { mutableStateOf(false) }
     var mostrarModalUbicacion by remember { mutableStateOf(false) }
     var mostrarModalBienvenida by remember { mutableStateOf(mostrarBienvenidaInicial) }
     var visible by remember { mutableStateOf(false) }
 
     androidx.compose.runtime.LaunchedEffect(Unit) {
         visible = true
+    }
+
+    @SuppressLint("MissingPermission")
+    fun obtenerUbicacionActual() {
+        mostrandoUbicacion = true
+        scope.launch {
+            try {
+                val lastLocation = fusedLocationClient.lastLocation.await()
+                val location: Location? = lastLocation ?: fusedLocationClient.getCurrentLocation(
+                    Priority.PRIORITY_BALANCED_POWER_ACCURACY,
+                    null
+                ).await()
+
+                ubicacion = if (location != null) {
+                    String.format(
+                        Locale.getDefault(),
+                        "Lat: %.5f, Lon: %.5f\nPrecisión: %.1f m",
+                        location.latitude,
+                        location.longitude,
+                        if (location.hasAccuracy()) location.accuracy else 0f
+                    )
+                } else {
+                    "No se pudo obtener la ubicación. Activa el GPS e inténtalo nuevamente."
+                }
+            } catch (e: Exception) {
+                ubicacion = "Error al obtener ubicación: ${e.message ?: "desconocido"}"
+            } finally {
+                mostrandoUbicacion = false
+                mostrarModalUbicacion = true
+            }
+        }
+    }
+
+    fun tienePermisoUbicacion(): Boolean {
+        val fine = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        val coarse = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        return fine || coarse
     }
 
     // Lanzador para tomar foto
@@ -96,6 +141,20 @@ fun HomeScreen(
             )
             imageUri = uri
             takePictureLauncher.launch(uri)
+        }
+    }
+
+    // Lanzador de permisos de ubicación
+    val locationPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val granted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
+                permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+        if (granted) {
+            obtenerUbicacionActual()
+        } else {
+            ubicacion = "Permiso de ubicación denegado."
+            mostrarModalUbicacion = true
         }
     }
 
@@ -162,6 +221,28 @@ fun HomeScreen(
                 Spacer(modifier = Modifier.height(12.dp))
 
                 Button(
+                    onClick = {
+                        if (tienePermisoUbicacion()) {
+                            obtenerUbicacionActual()
+                        } else {
+                            locationPermissionLauncher.launch(
+                                arrayOf(
+                                    Manifest.permission.ACCESS_FINE_LOCATION,
+                                    Manifest.permission.ACCESS_COARSE_LOCATION
+                                )
+                            )
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !mostrandoUbicacion,
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                ) {
+                    Text(if (mostrandoUbicacion) "Obteniendo ubicación..." else "Obtener Ubicación (GPS)")
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Button(
                     onClick = { navController.navigate("solicitud") },
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.tertiary)
@@ -211,6 +292,20 @@ fun HomeScreen(
                     )
                 }
             }
+
+            if (mostrarModalUbicacion) {
+                AlertDialog(
+                    onDismissRequest = { mostrarModalUbicacion = false },
+                    title = { Text("Ubicación actual") },
+                    text = { Text(ubicacion) },
+                    confirmButton = {
+                        Button(onClick = { mostrarModalUbicacion = false }) {
+                            Text("Aceptar")
+                        }
+                    }
+                )
+            }
+
             if (mostrarModalBienvenida) {
                 AlertDialog(
                     onDismissRequest = { mostrarModalBienvenida = false },
